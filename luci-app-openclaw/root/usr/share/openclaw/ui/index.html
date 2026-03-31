@@ -13,7 +13,7 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   #loading h2{font-size:18px;font-weight:500;margin-bottom:8px}
   #loading p{font-size:13px;color:#565f89}
-  #loading .debug{font-size:11px;color:#3b3d57;margin-top:12px;max-width:90%;word-break:break-all;text-align:center}
+  #loading .debug{display:none}
   #terminal-container{width:100%;height:calc(100% - 36px);position:absolute;top:36px;left:0;right:0;bottom:0;padding:4px;overflow:hidden}
   .xterm{height:100%!important}
   .xterm-viewport::-webkit-scrollbar{width:8px}
@@ -73,7 +73,7 @@
   const term = new window.Terminal({
     cursorBlink: true,
     cursorStyle: 'bar',
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", "Source Code Pro", Menlo, Monaco, "Courier New", monospace',
     lineHeight: 1.2,
     scrollback: 5000,
@@ -114,6 +114,10 @@
 
   term.open(containerEl);
 
+  // 点击终端区域时确保 xterm.js 获得键盘焦点
+  containerEl.addEventListener('click', function() { term.focus(); });
+  document.addEventListener('click', function() { term.focus(); });
+
   function doFit() {
     try { fitAddon.fit(); } catch(e) { /* ignore */ }
     try { term.scrollToBottom(); } catch(e) { /* ignore */ }
@@ -144,7 +148,7 @@
     try { fitAddon.fit(); } catch(e) {}
     if (term.cols > 40) {
       _readyToConnect = true;
-      if (_connectPending) { _connectPending = false; connect(); }
+      connect();  // 首次就绪时直接连接，不依赖 _connectPending
     }
   }
   // ResizeObserver 监听容器尺寸变化（切换到本 Tab 时触发）
@@ -307,10 +311,7 @@
   function _onLoad() {
     doFit();
     _tryConnect();
-    if (!_readyToConnect) {
-      // 容器还不可见，标记待连接，等 ResizeObserver 触发
-      _connectPending = true;
-    }
+    // 若容器不可见（cols<=40），等 ResizeObserver 触发后 _tryConnect 会自动 connect()
   }
   if (document.readyState === 'complete') {
     _onLoad();
